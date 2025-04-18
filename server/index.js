@@ -29,7 +29,7 @@ import ThundersPayment from "./src/routes/NewTDC/TdcPayment.Route.js";
 import morgan from "morgan";
 
 const app = express();
-app.use(morgan("dev"));
+app.use(morgan());
 os.tmpdir = () => "D:\\temp";
 const tempDir = "D:\\temp";
 if (!fs.existsSync(tempDir)) {

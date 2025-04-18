@@ -6,7 +6,7 @@ import Loading from "../../components/loading/Loading";
 import { Alert, Container } from "react-bootstrap";
 
 const PayResponse = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
   const location = useLocation();
   const [responseMessage, setResponseMessage] = useState("");
   const [isVerified, setIsVerified] = useState(false);
@@ -14,8 +14,7 @@ const PayResponse = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [details, setDetails] = useState(null);
 
-  const [shouldRedirect, setShouldRedirect] = useState(false);
-  //   const [redirectUrl, setRedirectUrl] = useState("/register");
+    const [shouldRedirect, setShouldRedirect] = useState(false);
 
   const isVerifyingRef = useRef(false);
 
@@ -33,7 +32,6 @@ const PayResponse = () => {
     const PID = params.get("PID");
     const PS = params.get("PS");
     const RC = params.get("RC");
-
     const DV = params.get("DV");
     const UID = params.get("UID");
     const BC = params.get("BC");
@@ -41,7 +39,19 @@ const PayResponse = () => {
     const P_AMT = params.get("P_AMT");
     const R_AMT = params.get("R_AMT");
 
-    // 🛑 New failure check according to updated backend
+    console.log("dats from params", {
+      PRN,
+      PID,
+      PS,
+      RC,
+      UID,
+      BC,
+      INI,
+      P_AMT,
+      R_AMT,
+      DV,
+    });
+
     if (PS === "false" || RC !== "successful") {
       let message = "Payment failed";
 
@@ -70,6 +80,7 @@ const PayResponse = () => {
     const formData = sessionStorage.getItem("formData")
       ? JSON.parse(sessionStorage.getItem("formData"))
       : null;
+    console.log("formdata", formData);
 
     if (![PRN, PID, PS, RC, UID, BC, INI, P_AMT, R_AMT, DV].every(Boolean)) {
       setResponseMessage("Missing required parameters.");
@@ -141,20 +152,20 @@ const PayResponse = () => {
     debouncedVerifyPayment();
   }, [location.search]);
 
-  useEffect(() => {
-    if (shouldRedirect) {
-      const timer = setTimeout(() => {
-        navigate("/register", {
-          state: {
-            paymentError: responseMessage,
-          },
-          replace: true,
-        });
-      }, 2000);
+    useEffect(() => {
+      if (shouldRedirect) {
+        const timer = setTimeout(() => {
+          navigate("/register", {
+            state: {
+              paymentError: responseMessage,
+            },
+            replace: true,
+          });
+        }, 2000);
 
-      return () => clearTimeout(timer);
-    }
-  }, [shouldRedirect, responseMessage, navigate]);
+        return () => clearTimeout(timer);
+      }
+    }, [shouldRedirect, responseMessage, navigate]);
 
   return (
     <div className="payment-reponse">

@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from "uuid";
 import paymentTDC from "../../models/NewTdc/Payment.Model.js";
 import Registration from "../../models/NewTdc/RegisterForm.Model.js";
 import sequelize from "../../db/index.js";
-import Joi from "joi";
 import { sendPaymentConfirmationEmail } from "../../middleware/TDCMail/mailService.js";
 const router = express.Router();
 import validatePaymentRequest from "../../utils/validatePayReq.js";
@@ -46,8 +45,6 @@ router.post("/pre-check-registration", async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Please proceed to payment for Registration",
-      //   registrationId: newRegistration.id,
-      //   prn: newRegistration.prn,
       prn: prn,
     });
   } catch (err) {
@@ -67,6 +64,19 @@ router.post("/generate-hash", (req, res) => {
   }
 
   const dataString = `${pid},${md},${prn},${amt},${crn},${dt},${r1},${r2},${ru}`;
+
+  console.log("Hash generation input:", {
+    pid,
+    md,
+    prn,
+    amt,
+    crn,
+    dt,
+    r1,
+    r2,
+    ru,
+    dataString: `${pid},${md},${prn},${amt},${crn},${dt},${r1},${r2},${ru}`,
+  });
 
   let SECRET_KEY = process.env.SECRET_KEY;
   const hmac = crypto.createHmac("sha512", SECRET_KEY);
@@ -99,7 +109,7 @@ router.post("/verify-payment", async (req, res) => {
   ) {
     return res.status(400).json({
       verified: false,
-      message: "Missing required parameters from backend",
+      message: "Missing required parameters ",
     });
   }
 

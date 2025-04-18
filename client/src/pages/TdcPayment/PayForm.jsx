@@ -10,6 +10,7 @@ const PayForm = () => {
   const [error, setError] = useState(null);
   const location = useLocation();
   const { formData, fee, prn } = location.state;
+  console.log("payfomr location stare", { formData, fee, prn });
 
   const merchantCodeenv = import.meta.env.VITE_MERCHANT_CODE;
   const returnUrlenv = import.meta.env.VITE_RETURN_URL;
@@ -17,22 +18,20 @@ const PayForm = () => {
 
   const PID = merchantCodeenv;
   const MD = "P";
-  const AMT = parseFloat(fee).toFixed(1);
+  const AMT = parseFloat(fee).toFixed(2);
   const CRN = "NPR";
   const DT = getCurrentDate();
   const R1 = String(formData?.fullName || "").substring(0, 160);
   const R2 = String(JSON.stringify(formData?.sports) || "N/A").substring(0, 50);
   const RU = `${returnUrlenv}/#/tdc-payment-response`;
-  //   const PRN = uuidv4().substring(0, 25);
   const PRN = prn;
-  console.log("Received PRN from location:", PRN);
 
   const generatePaymentUrl = async () => {
     setLoading(true);
     setError(null);
 
     // Validation
-    if (!formData || !fee) {
+    if (!formData || !fee || !prn) {
       setError("Form data or fee is missing.");
       setLoading(false);
       return;
@@ -70,9 +69,10 @@ const PayForm = () => {
           },
         }
       );
-      console.log("generate hash", response);
+      console.log("generate hash", response.data);
 
       const { dv } = response.data;
+      console.log("dv", dv);
       const paymentUrl = `${paymentUrlenv}/api/merchantRequest?PID=${PID}&MD=${MD}&AMT=${AMT}&CRN=${CRN}&DT=${encodeURIComponent(
         DT
       )}&R1=${encodeURIComponent(R1)}&R2=${encodeURIComponent(
@@ -80,6 +80,10 @@ const PayForm = () => {
       )}&DV=${dv}&RU=${encodeURIComponent(RU)}&PRN=${PRN}`;
 
       window.location.href = paymentUrl;
+      console.log("payment url", paymentUrl);
+      setTimeout(() => {
+        window.location.href = paymentUrl;
+      }, 5000);
     } catch (err) {
       console.error("Payment generation error:", err);
       if (err.response) {
