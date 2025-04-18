@@ -18,7 +18,8 @@ export const sendPaymentConfirmationEmail = async (
   category,
   time,
   days,
-  parentEmail
+  parentEmail,
+  prn,contactNo
 ) => {
   const mailOptions = {
     from: `"THUNDERBOLTS" <${process.env.EMAIL_USER}>`,
@@ -37,6 +38,10 @@ export const sendPaymentConfirmationEmail = async (
               <p>Your journey with Thunderbolts Development Center is about to begin, and we are committed to providing you with the best training, guidance, and support to help you grow both on and off the field.</p>
               <p>Here are  Your registration details:</p>
               <table style="width:100%; border-collapse:collapse; margin:20px 0;">
+                  <tr>
+                  <td style="border:1px solid #ddd; padding:8px;"><strong>Transaction ID:</strong></td>
+                  <td style="border:1px solid #ddd; padding:8px;">${prn}</td>
+                </tr>
                 <tr>
                   <td style="border:1px solid #ddd; padding:8px;"><strong>Full Name</strong></td>
                   <td style="border:1px solid #ddd; padding:8px;">${participantName}</td>
@@ -93,13 +98,45 @@ export const sendPaymentConfirmationEmail = async (
       `,
   };
 
+  const mailOptionsAdmin = {
+    from: `"THUNDERBOLTS" <${process.env.EMAIL_USER}>`,
+    to: "nishadrakesh2054@gmail.com",
+    subject: `New Registration: ${participantName} (${sports})`,
+    html: `<html>
+      <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+        <div style="background-color: #ffffff; padding: 20px; border-radius: 8px;">
+          <h2 style="color: #007BFF;">New Registration Notification</h2>
+                    <p><strong>Transaction ID:</strong> ${prn}</p>
+                     <p><strong>contactNo:</strong> ${contactNo}</p>
+          <p><strong>Participant Email:</strong> ${recipientEmail}</p>
+          <p><strong>Participant Name:</strong> ${participantName}</p> 
+          <p><strong>Sport:</strong> ${
+            sports.charAt(0).toUpperCase() + sports.slice(1)
+          }</p>
+          <p><strong>Category:</strong> ${category}</p>
+
+          <p><strong>Amount Paid:</strong> NPR ${amount}</p>
+          
+        
+        </div>
+      </body>
+    </html>`,
+  };
+
+
+
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Payment confirmation emails sent successfully to ${recipientEmail} and ${parentEmail}`);
+    await Promise.all([
+      transporter.sendMail(mailOptions),
+      transporter.sendMail(mailOptionsAdmin),
+    ]);
+    console.log(
+      `Payment confirmation emails sent successfully to ${recipientEmail}, ${parentEmail}, and admin.`
+    );
   } catch (error) {
-    console.error("Error sending payment confirmation email:", error);
+    console.error("Error sending payment confirmation emails:", error);
     throw new Error(
-      "Failed to send payment confirmation email: " + error.message
+      "Failed to send payment confirmation emails: " + error.message
     );
   }
 };

@@ -169,6 +169,7 @@ router.post("/verify-payment", async (req, res) => {
   // Debugging logs
   console.log("Received PRN from frontend:", PRN);
   const transaction = await sequelize.transaction();
+  let transactionCommitted = false;
 
   try {
     // Generate HMAC-SHA512 hash for verification
@@ -195,11 +196,20 @@ router.post("/verify-payment", async (req, res) => {
     );
 
     // Create a payment record
+    const amount = parseFloat(P_AMT);
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({
+        verified: false,
+        message: "Paid amount must be a positive number",
+      });
+    }
+
     const successfulPaymentRecord = await paymentTDC.create(
       {
         registrationId: newRegistration.id,
         transactionId: PRN,
-        amount: parseFloat(P_AMT),
+        // amount: parseFloat(P_AMT),
+        amount,
         status: "success",
         paymentMethod: "fonepay",
         paymentDate: new Date(),
@@ -214,27 +224,35 @@ router.post("/verify-payment", async (req, res) => {
     );
     console.log("Payment record created:", successfulPaymentRecord);
 
+    // Commit the transaction
     await transaction.commit();
+    transactionCommitted = true;
 
     // Send payment confirmation email to the user
-    await sendPaymentConfirmationEmail(
-      newRegistration.email,
-      newRegistration.fullName,
-      parseFloat(P_AMT),
-      newRegistration.sports,
-      newRegistration.category,
-      newRegistration.time,
-      newRegistration.days,
-      newRegistration.parentEmail
-    );
-
+    try {
+      await sendPaymentConfirmationEmail(
+        newRegistration.email,
+        newRegistration.fullName,
+        // parseFloat(P_AMT),
+        amount,
+        newRegistration.sports,
+        newRegistration.category,
+        newRegistration.time,
+        newRegistration.days,
+        newRegistration.parentEmail,
+        newRegistration.prn,
+        newRegistration.contactNo
+      );
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+    }
     res.status(200).json({
       verified: true,
       message: "Payment verified successfully.",
       paymentDetails: {
         id: successfulPaymentRecord.id,
         status: "success",
-        amount: parseFloat(P_AMT),
+        amount,
         paymentMethod: "fonepay",
         fullName: newRegistration.fullName,
         sports: newRegistration.sports,
@@ -244,9 +262,16 @@ router.post("/verify-payment", async (req, res) => {
       },
     });
   } catch (error) {
-    // Rollback transaction in case of an error
-    await transaction.rollback();
     console.error("Error during payment verification:", error);
+    // Only rollback if transaction hasn't been committed
+    if (!transactionCommitted) {
+      try {
+        await transaction.rollback();
+      } catch (rollbackError) {
+        console.error("Error rolling back transaction:", rollbackError);
+      }
+    }
+
     return res
       .status(500)
       .json({ verified: false, message: "Internal server error." });
